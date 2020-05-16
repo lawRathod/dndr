@@ -33,7 +33,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   // This moves the PDF file from the assets to a place accessible by our PDF viewer.
 
-  final Permission x = Permission.storage;
+  final Permission storage_perm = Permission.storage;
 
   Future<void> requestPermission(Permission permission) async {
     final status = await permission.request();
@@ -78,7 +78,7 @@ class _MyHomePageState extends State<MyHomePage> {
             RaisedButton(
               onPressed: () => {
                 // We need to prepare the test PDF, and then we can display the PDF.
-                requestPermission(x)
+                requestPermission(storage_perm)
               },
               child: const Text('Request Permission'),
               
