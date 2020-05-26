@@ -1,106 +1,54 @@
-import 'dart:io';
-import 'dart:typed_data';
-
-import 'package:flutter/material.dart';
-import 'package:flutter_full_pdf_viewer/full_pdf_viewer_scaffold.dart';
-import 'package:path_provider/path_provider.dart';
+import "package:flutter/material.dart";
 import 'package:permission_handler/permission_handler.dart';
-
-const String _documentPath = '/storage/emulated/0/Download/check.pdf';
+import "listmaker.dart";
 
 void main() => runApp(MyApp());
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
+  MyApp({Key key}) : super(key: key);
+
+  @override
+  _MyAppState createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  final List<String> listitems = new List();
+
+  Permission storagePerm = Permission.storage;
+  PermissionStatus status = PermissionStatus.undetermined;
+
+  @override
+  void initState() {
+    checkStatus(storagePerm);
+    super.initState();
+  }
+
+  void requestPermission(Permission permission) async {
+    await permission.request();
+  }
+
+  void checkStatus(Permission permission) async{
+    status = (await permission.status);
+    if(status != PermissionStatus.granted){
+      requestPermission(permission);
+    } else{
+      print(status);
+    }
+  } 
+
   @override
   Widget build(BuildContext context) {
+    listitems.add("water");
+    listitems.add("in the peakock");
+    listitems.add("i got bae");
     return MaterialApp(
-      title: 'Opening a PDF',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: MyHomePage(),
-    );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  MyHomePage({Key key}) : super(key: key);
-
-  @override
-  _MyHomePageState createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  // This moves the PDF file from the assets to a place accessible by our PDF viewer.
-
-  final Permission storage_perm = Permission.storage;
-
-  Future<void> requestPermission(Permission permission) async {
-    final status = await permission.request();
-  }
-
-  Future<String> prepareTestPdf() async {
-    final ByteData bytes =
-        await DefaultAssetBundle.of(context).load(_documentPath);
-    final Uint8List list = bytes.buffer.asUint8List();
-
-    final tempDir = await getTemporaryDirectory();
-    final tempDocumentPath = '${tempDir.path}/$_documentPath';
-
-    final file = await File(tempDocumentPath).create(recursive: true);
-    file.writeAsBytesSync(list);
-    return tempDocumentPath;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("Opening a PDF"),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            RaisedButton(
-              onPressed: () => {
-                // We need to prepare the test PDF, and then we can display the PDF.
-                prepareTestPdf().then((path) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => FullPdfViewerScreen(path)),
-                  );
-                })
-              },
-              child: const Text('Open PDF with full_pdf_viewer'),
+        title: "Home",
+        home: Scaffold(
+            appBar: AppBar(
+              title: Text("List of PDFs"),
             ),
-            RaisedButton(
-              onPressed: () => {
-                // We need to prepare the test PDF, and then we can display the PDF.
-                requestPermission(storage_perm)
-              },
-              child: const Text('Request Permission'),
-              
+            body: Pager(listitems)
             )
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class FullPdfViewerScreen extends StatelessWidget {
-  final String pdfPath;
-
-  FullPdfViewerScreen(this.pdfPath);
-
-  @override
-  Widget build(BuildContext context) {
-    return PDFViewerScaffold(
-        appBar: AppBar(
-          title: Text("Document"),
-        ),
-        path: pdfPath);
+            );
   }
 }
