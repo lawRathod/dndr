@@ -5,27 +5,29 @@ class Pager extends StatefulWidget {
   Pager(this._items, {Key key}) : super(key: key);
 
   @override
-  _PagerState createState() => _PagerState();
+  _PagerState createState() => _PagerState(_items);
 }
 
 class _PagerState extends State<Pager> {
-  
-  Widget _buildlist(){
+  _PagerState(this._items);
+  final _items;
+  Widget _buildlist() {
     return ListView.builder(
-      itemCount: widget._items.length,
+      itemCount: _items.length,
       itemBuilder: (context, index) {
-        return _buildrow(widget._items[index]);
+        return _buildrow(_items[index], context);
       },
     );
   }
-  Widget _buildrow(String a){
+
+  Widget _buildrow(a, context) {
     return ListTile(
       title: Text(
         a,
       ),
     );
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return _buildlist();

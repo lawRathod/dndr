@@ -23,8 +23,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  path_provider: ^0.4.1
   permission_handler: ^5.0.0+hotfix.6
+  advance_pdf_viewer: ^1.1.6
+  path: ^1.7.0
 
 
   # The following adds the Cupertino Icons font to your application.

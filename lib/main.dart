@@ -1,6 +1,8 @@
 import "package:flutter/material.dart";
 import 'package:permission_handler/permission_handler.dart';
 import "listmaker.dart";
+import "dart:io";
+import "package:path/path.dart";
 
 void main() => runApp(MyApp());
 
@@ -12,10 +14,11 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  final List<String> listitems = new List();
-
+  List<String> _pdfnames = [];
+  List<FileSystemEntity> _pdfs = [];
   Permission storagePerm = Permission.storage;
   PermissionStatus status = PermissionStatus.undetermined;
+
 
   @override
   void initState() {
@@ -27,28 +30,39 @@ class _MyAppState extends State<MyApp> {
     await permission.request();
   }
 
-  void checkStatus(Permission permission) async{
+  void getlists() {
+    Directory dir = Directory('/storage/emulated/0/');
+    // String pdfdir = dir.toString();
+    List<FileSystemEntity> _files;
+
+    _files = dir.listSync(recursive: true, followLinks: false);
+    for (FileSystemEntity entity in _files) {
+      String path = entity.path;
+      if (path.endsWith('.pdf')) {
+        _pdfnames.add(basename(entity.path).replaceAll(".pdf", ""));
+        _pdfs.add(entity);
+      }
+    }
+  }
+
+  void checkStatus(Permission permission) async {
     status = (await permission.status);
-    if(status != PermissionStatus.granted){
+    if (status != PermissionStatus.granted) {
       requestPermission(permission);
-    } else{
+    } else {
       print(status);
     }
-  } 
+  }
 
   @override
   Widget build(BuildContext context) {
-    listitems.add("water");
-    listitems.add("in the peakock");
-    listitems.add("i got bae");
+    getlists();
     return MaterialApp(
         title: "Home",
         home: Scaffold(
             appBar: AppBar(
               title: Text("List of PDFs"),
             ),
-            body: Pager(listitems)
-            )
-            );
+            body: Pager(_pdfnames)));
   }
 }
