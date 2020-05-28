@@ -2,7 +2,7 @@ import "package:flutter/material.dart";
 import 'package:permission_handler/permission_handler.dart';
 import "listmaker.dart";
 import "dart:io";
-import "package:path/path.dart";
+// import "package:advance_pdf_viewer/advance_pdf_viewer.dart";
 
 void main() => runApp(MyApp());
 
@@ -14,10 +14,12 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  List<String> _pdfnames = [];
   List<FileSystemEntity> _pdfs = [];
   Permission storagePerm = Permission.storage;
   PermissionStatus status = PermissionStatus.undetermined;
+  String topdf =
+      "/storage/emulated/0/Download/GetSwishing - Tip Card 4 - sew a button.pdf";
+
 
 
   @override
@@ -30,6 +32,7 @@ class _MyAppState extends State<MyApp> {
     await permission.request();
   }
 
+
   void getlists() {
     Directory dir = Directory('/storage/emulated/0/');
     // String pdfdir = dir.toString();
@@ -39,7 +42,6 @@ class _MyAppState extends State<MyApp> {
     for (FileSystemEntity entity in _files) {
       String path = entity.path;
       if (path.endsWith('.pdf')) {
-        _pdfnames.add(basename(entity.path).replaceAll(".pdf", ""));
         _pdfs.add(entity);
       }
     }
@@ -63,6 +65,6 @@ class _MyAppState extends State<MyApp> {
             appBar: AppBar(
               title: Text("List of PDFs"),
             ),
-            body: Pager(_pdfnames)));
+            body: Pager(_pdfs)));
   }
 }

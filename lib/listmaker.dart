@@ -1,4 +1,7 @@
 import "package:flutter/material.dart";
+import "package:path/path.dart";
+import "pdfviewer.dart";
+import "dart:io";
 
 class Pager extends StatefulWidget {
   final _items;
@@ -11,6 +14,11 @@ class Pager extends StatefulWidget {
 class _PagerState extends State<Pager> {
   _PagerState(this._items);
   final _items;
+
+  Future navigateToSubPage(context, pdf) async {
+    Navigator.push(context, MaterialPageRoute(builder: (context) => PDFscreen(pdf)));
+  }
+
   Widget _buildlist() {
     return ListView.builder(
       itemCount: _items.length,
@@ -22,9 +30,11 @@ class _PagerState extends State<Pager> {
 
   Widget _buildrow(a, context) {
     return ListTile(
-      title: Text(
-        a,
-      ),
+      title:
+          a is String ? Text(a) : Text(basename(a.path).replaceAll(".pdf", "")),
+      onTap: () {
+        navigateToSubPage(context, new File(a.path.toString()));
+      },
     );
   }
 
