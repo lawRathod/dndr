@@ -1,7 +1,7 @@
 import "package:flutter/material.dart";
 import "package:path/path.dart";
 import "pdfviewer.dart";
-import "dart:io";
+// import "dart:io";
 
 class Pager extends StatefulWidget {
   final _items;
@@ -33,7 +33,7 @@ class _PagerState extends State<Pager> {
       title:
           a is String ? Text(a) : Text(basename(a.path).replaceAll(".pdf", "")),
       onTap: () {
-        navigateToSubPage(context, new File(a.path.toString()));
+        navigateToSubPage(context, a.path.toString());
       },
     );
   }
