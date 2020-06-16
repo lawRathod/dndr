@@ -26,6 +26,7 @@ dependencies:
   permission_handler: ^5.0.0+hotfix.6
   flutter_full_pdf_viewer: ^1.0.6
   path: ^1.7.0
+  draggable_scrollbar: ^0.0.4
 
 
   # The following adds the Cupertino Icons font to your application.

@@ -18,7 +18,8 @@ class _PDFscreenState extends State<PDFscreen> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      child: PDFViewerScaffold(path: pdf),
+      child: PDFViewerScaffold(
+        path: pdf),
     );
   }
 }
