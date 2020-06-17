@@ -28,12 +28,9 @@ class _MyAppState extends State<MyApp> {
     checkStatus(storagePerm);
   }
 
-  void requestPermission(Permission permission) async {
-    await permission.request();
-  }
-
   void getlists() {
     _pdfs.clear();
+    _dup.clear();
     Directory dir = Directory('/storage/emulated/0/');
     // String pdfdir = dir.toString();
     List<FileSystemEntity> _files;
@@ -42,16 +39,18 @@ class _MyAppState extends State<MyApp> {
     for (FileSystemEntity entity in _files) {
       String path = entity.path;
       if (path.endsWith('.pdf')) {
-        _pdfs.add(entity);
+        _dup.add(entity);
       }
     }
-    _pdfs.sort((a, b) {
+    _dup.sort((a, b) {
       return basename(a.path)
           .replaceAll(".pdf", "")
           .compareTo(basename(b.path).replaceAll(".pdf", ""));
     });
 
-    _dup = new List.from(_pdfs);
+    setState(() {
+      _pdfs.addAll(_dup);
+    });
   }
 
   void filterSearchResults(String query) {
@@ -60,7 +59,10 @@ class _MyAppState extends State<MyApp> {
     if (query.isNotEmpty) {
       List<FileSystemEntity> dummyListData = List<FileSystemEntity>();
       dummySearchList.forEach((item) {
-        if (basename(item.path).replaceAll(".pdf", "").contains(query)) {
+        if (basename(item.path)
+            .replaceAll(".pdf", "")
+            .toLowerCase()
+            .contains(query.toLowerCase())) {
           dummyListData.add(item);
         }
       });
@@ -77,15 +79,14 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
-  void checkStatus(Permission permission) async {
-    status = await permission.status;
-    if (status != PermissionStatus.granted) {
-      requestPermission(permission);
-    } else {
-      print(status);
-    }
+  Future<PermissionStatus> requestPermission(Permission permission) async {
+    return await permission.request();
+  }
 
-    getlists();
+  void checkStatus(Permission permission) async {
+    await requestPermission(permission).then((value) {
+      getlists();
+    });
   }
 
   Future navigateToSubPage(context, pdf) async {
@@ -98,23 +99,31 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
         title: "Home",
         theme: ThemeData(
-          primaryColor: Colors.black,
-          accentColor: Colors.black,
-
-        ),
-        
+            primaryColor: Colors.black,
+            accentColor: Colors.black,
+            appBarTheme: AppBarTheme(color: Colors.white)),
         home: Scaffold(
             appBar: AppBar(
-              title: Text("dndr"),
+              elevation: 0,
+              bottom: PreferredSize(
+                  child: Container(
+                    color: Colors.black,
+                    height: 2.0,
+                  ),
+                  preferredSize: Size.fromHeight(4.0)),
+              title: Text(
+                "dndr",
+                style: TextStyle(color: Colors.black),
+              ),
               actions: <Widget>[
                 IconButton(
+                  color: Colors.black,
                   icon: Icon(Icons.refresh),
                   onPressed: () {
                     getlists();
                   },
                 )
               ],
-              backgroundColor: Colors.black,
             ),
             floatingActionButton: FloatingActionButton(
                 backgroundColor: Colors.black,
@@ -125,6 +134,10 @@ class _MyAppState extends State<MyApp> {
                 children: <Widget>[
                   Container(
                     padding: const EdgeInsets.all(8.0),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      // border: Border(bottom: BorderSide(color: Colors.black, width: 2))
+                    ),
                     child: TextField(
                       onChanged: (value) {
                         filterSearchResults(value);
@@ -150,27 +163,35 @@ class _MyAppState extends State<MyApp> {
                         return Container(
                             padding: EdgeInsets.fromLTRB(3, 0, 3, 0),
                             child: Container(
-                              child: InkWell(
-                                borderRadius: BorderRadius.all(Radius.circular(100)),
-                                child: Card(
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10)),
-                                  child: Container(
+                              child: Card(
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10)),
+                                child: Container(
                                     decoration: BoxDecoration(
                                         borderRadius: BorderRadius.circular(10),
                                         border: Border.all(
                                             color: Colors.black, width: 1)),
-                                    child: ListTile(
-                                      title: Text(basename(_pdfs[index].path)
-                                          .replaceAll(".pdf", "")),
-                                      onTap: () {
-                                        navigateToSubPage(context,
-                                            _pdfs[index].path.toString());
+                                    child: GestureDetector(
+                                      behavior: HitTestBehavior.translucent,
+                                      onTapCancel: () {
+                                        FocusScope.of(context)
+                                            .requestFocus(new FocusNode());
                                       },
-                                    ),
-                                  ),
-                                ),
+                                      child: InkWell(
+                                        borderRadius: BorderRadius.all(
+                                            Radius.circular(10)),
+                                        child: ListTile(
+                                          title: Text(
+                                              basename(_pdfs[index].path)
+                                                  .replaceAll(".pdf", "")),
+                                          onTap: () {
+                                            navigateToSubPage(context,
+                                                _pdfs[index].path.toString());
+                                          },
+                                        ),
+                                      ),
+                                    )),
                               ),
                             ));
                       },
