@@ -1,4 +1,5 @@
 import 'package:draggable_scrollbar/draggable_scrollbar.dart';
+import 'package:flutter/services.dart';
 import "package:flutter/material.dart";
 import 'package:permission_handler/permission_handler.dart';
 import "dart:io";
@@ -94,6 +95,8 @@ class _MyAppState extends State<MyApp> {
   void contextMenu(_context, _index, LongPressStartDetails _val) {
     final RenderBox overlay = Overlay.of(_context).context.findRenderObject();
     showMenu(
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(10))),
         position: RelativeRect.fromRect(
             _val.globalPosition & Size(100, 100), Offset.zero & overlay.size),
         context: _context,
@@ -101,13 +104,17 @@ class _MyAppState extends State<MyApp> {
           PopupMenuItem(
               value: "del",
               child: Container(
-                  child: Row(
-                      children: <Widget>[Icon(Icons.delete), Text("Delete")]))),
+                  child: Row(children: <Widget>[
+                Icon(Icons.delete, color: Colors.red),
+                Text("  Delete", style: TextStyle(color: Colors.red))
+              ]))),
           PopupMenuItem(
             value: "edit",
             child: Container(
-                child:
-                    Row(children: <Widget>[Icon(Icons.edit), Text("Rename")])),
+                child: Row(children: <Widget>[
+              Icon(Icons.edit, color: Colors.grey.shade700),
+              Text("  Rename", style: TextStyle(color: Colors.grey.shade700)),
+            ])),
           )
         ]).then<void>((String sel) {
       File tochange = new File(_pdfs[_index].path);
@@ -177,28 +184,33 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+      statusBarColor: Colors.white,
+      statusBarIconBrightness: Brightness.dark,
+    ));
     return MaterialApp(
         title: "Home",
         theme: ThemeData(
-            primaryColor: Colors.black,
-            accentColor: Colors.black,
+            primaryColor: Colors.grey.shade700,
+            accentColor: Colors.grey.shade700,
             appBarTheme: AppBarTheme(color: Colors.white)),
         home: Scaffold(
             appBar: AppBar(
+              brightness: Brightness.light,
               elevation: 0,
               bottom: PreferredSize(
                   child: Container(
-                    color: Colors.black,
-                    height: 2.0,
+                    color: Colors.grey,
+                    height: 1.0,
                   ),
                   preferredSize: Size.fromHeight(4.0)),
               title: Text(
                 "dndr",
-                style: TextStyle(color: Colors.black),
+                style: TextStyle(color: Colors.grey.shade700),
               ),
               actions: <Widget>[
                 IconButton(
-                  color: Colors.black,
+                  color: Colors.grey.shade800,
                   icon: Icon(Icons.refresh),
                   onPressed: () {
                     getlists();
@@ -255,7 +267,7 @@ class _MyAppState extends State<MyApp> {
                                     decoration: BoxDecoration(
                                         borderRadius: BorderRadius.circular(10),
                                         border: Border.all(
-                                            color: Colors.black, width: 1)),
+                                            color: Colors.grey, width: 1)),
                                     child: GestureDetector(
                                       behavior: HitTestBehavior.translucent,
                                       onLongPressStart: (val) =>
