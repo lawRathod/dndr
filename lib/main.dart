@@ -1,106 +1,303 @@
-import 'dart:io';
-import 'dart:typed_data';
-
-import 'package:flutter/material.dart';
-import 'package:flutter_full_pdf_viewer/full_pdf_viewer_scaffold.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:draggable_scrollbar/draggable_scrollbar.dart';
+import 'package:flutter/services.dart';
+import "package:flutter/material.dart";
 import 'package:permission_handler/permission_handler.dart';
-
-const String _documentPath = '/storage/emulated/0/Download/check.pdf';
+import "dart:io";
+import "package:path/path.dart";
+import "pdfviewer.dart";
 
 void main() => runApp(MyApp());
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
+  MyApp({Key key}) : super(key: key);
+
+  @override
+  _MyAppState createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  final ScrollController _scrollController = ScrollController();
+  List<FileSystemEntity> _pdfs = [];
+  List<FileSystemEntity> _dup = [];
+  Permission storagePerm = Permission.storage;
+  PermissionStatus status = PermissionStatus.undetermined;
+  TextEditingController editingController = TextEditingController();
+  FocusNode myFocusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    checkStatus(storagePerm);
+    myFocusNode = new FocusNode();
+  }
+
+  void getlists() {
+    _pdfs.clear();
+    _dup.clear();
+    Directory dir = Directory('/storage/emulated/0/');
+    // String pdfdir = dir.toString();
+    List<FileSystemEntity> _files;
+
+    _files = dir.listSync(recursive: true, followLinks: false);
+    for (FileSystemEntity entity in _files) {
+      String path = entity.path;
+      if (path.endsWith('.pdf')) {
+        _dup.add(entity);
+      }
+    }
+    _dup.sort((a, b) {
+      return basename(a.path)
+          .replaceAll(".pdf", "")
+          .compareTo(basename(b.path).replaceAll(".pdf", ""));
+    });
+
+    setState(() {
+      _pdfs.addAll(_dup);
+    });
+  }
+
+  void filterSearchResults(String query) {
+    List<FileSystemEntity> dummySearchList = List<FileSystemEntity>();
+    dummySearchList.addAll(_dup);
+    if (query.isNotEmpty) {
+      List<FileSystemEntity> dummyListData = List<FileSystemEntity>();
+      dummySearchList.forEach((item) {
+        if (basename(item.path)
+            .replaceAll(".pdf", "")
+            .toLowerCase()
+            .contains(query.toLowerCase())) {
+          dummyListData.add(item);
+        }
+      });
+      setState(() {
+        _pdfs.clear();
+        _pdfs.addAll(dummyListData);
+      });
+      return;
+    } else {
+      setState(() {
+        _pdfs.clear();
+        _pdfs.addAll(_dup);
+      });
+    }
+  }
+
+  Future<PermissionStatus> requestPermission(Permission permission) async {
+    return await permission.request();
+  }
+
+  void checkStatus(Permission permission) async {
+    await requestPermission(permission).then((value) {
+      getlists();
+    });
+  }
+
+  void contextMenu(_context, _index, LongPressStartDetails _val) {
+    final RenderBox overlay = Overlay.of(_context).context.findRenderObject();
+    showMenu(
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(10))),
+        position: RelativeRect.fromRect(
+            _val.globalPosition & Size(100, 100), Offset.zero & overlay.size),
+        context: _context,
+        items: <PopupMenuEntry<String>>[
+          PopupMenuItem(
+              value: "del",
+              child: Container(
+                  child: Row(children: <Widget>[
+                Icon(Icons.delete, color: Colors.red),
+                Text("  Delete", style: TextStyle(color: Colors.red))
+              ]))),
+          PopupMenuItem(
+            value: "edit",
+            child: Container(
+                child: Row(children: <Widget>[
+              Icon(Icons.edit, color: Colors.grey.shade700),
+              Text("  Rename", style: TextStyle(color: Colors.grey.shade700)),
+            ])),
+          )
+        ]).then<void>((String sel) {
+      File tochange = new File(_pdfs[_index].path);
+      if (sel == "del") {
+        try {
+          tochange.delete();
+          getlists();
+        } catch (e) {
+          print(e);
+        }
+      } else if (sel == "edit") {
+        String _newName;
+        showDialog(
+            context: _context,
+            builder: (_) => new AlertDialog(
+                    title: Text("Rename"),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(32))),
+                    content: Row(children: <Widget>[
+                      Expanded(
+                          child: TextField(
+                              autofocus: true,
+                              onChanged: (val) {
+                                _newName = val;
+                              },
+                              decoration: InputDecoration(
+                                  labelText: "Name",
+                                  border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.all(
+                                          Radius.circular(25.0))))))
+                    ]),
+                    actions: <Widget>[
+                      FlatButton(
+                          textColor: Colors.black,
+                          child: Text("Ok"),
+                          onPressed: () {
+                            Navigator.of(_context).pop();
+                            if (_newName != null) {
+                              _newName = tochange.path.substring(
+                                      0, tochange.path.lastIndexOf("/") + 1) +
+                                  _newName +
+                                  ".pdf";
+                              List<String> _temp = new List<String>();
+                              for (FileSystemEntity i in _pdfs) {
+                                _temp.add(i.path);
+                              }
+                              if (_temp.contains(_newName)) {
+                                print("already there");
+                              } else {
+                                print("in here");
+                                tochange.rename(_newName);
+                                getlists();
+                              }
+                            } else {
+                              print("String Empty");
+                            }
+                          })
+                    ]));
+      }
+    });
+  }
+
+  Future navigateToSubPage(context, pdf) async {
+    Navigator.push(
+        context, MaterialPageRoute(builder: (context) => PDFscreen(pdf)));
+  }
+
   @override
   Widget build(BuildContext context) {
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+      statusBarColor: Colors.white,
+      statusBarIconBrightness: Brightness.dark,
+    ));
     return MaterialApp(
-      title: 'Opening a PDF',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: MyHomePage(),
-    );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  MyHomePage({Key key}) : super(key: key);
-
-  @override
-  _MyHomePageState createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  // This moves the PDF file from the assets to a place accessible by our PDF viewer.
-
-  final Permission x = Permission.storage;
-
-  Future<void> requestPermission(Permission permission) async {
-    final status = await permission.request();
-  }
-
-  Future<String> prepareTestPdf() async {
-    final ByteData bytes =
-        await DefaultAssetBundle.of(context).load(_documentPath);
-    final Uint8List list = bytes.buffer.asUint8List();
-
-    final tempDir = await getTemporaryDirectory();
-    final tempDocumentPath = '${tempDir.path}/$_documentPath';
-
-    final file = await File(tempDocumentPath).create(recursive: true);
-    file.writeAsBytesSync(list);
-    return tempDocumentPath;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("Opening a PDF"),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            RaisedButton(
-              onPressed: () => {
-                // We need to prepare the test PDF, and then we can display the PDF.
-                prepareTestPdf().then((path) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => FullPdfViewerScreen(path)),
-                  );
-                })
-              },
-              child: const Text('Open PDF with full_pdf_viewer'),
+        title: "Home",
+        theme: ThemeData(
+            primaryColor: Colors.grey.shade700,
+            accentColor: Colors.grey.shade700,
+            appBarTheme: AppBarTheme(color: Colors.white)),
+        home: Scaffold(
+            appBar: AppBar(
+              brightness: Brightness.light,
+              elevation: 0,
+              bottom: PreferredSize(
+                  child: Container(
+                    color: Colors.grey,
+                    height: 1.0,
+                  ),
+                  preferredSize: Size.fromHeight(4.0)),
+              title: Text(
+                "dndr",
+                style: TextStyle(color: Colors.grey.shade700),
+              ),
+              actions: <Widget>[
+                IconButton(
+                  color: Colors.grey.shade800,
+                  icon: Icon(Icons.refresh),
+                  onPressed: () {
+                    getlists();
+                  },
+                )
+              ],
             ),
-            RaisedButton(
-              onPressed: () => {
-                // We need to prepare the test PDF, and then we can display the PDF.
-                requestPermission(x)
-              },
-              child: const Text('Request Permission'),
-              
-            )
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class FullPdfViewerScreen extends StatelessWidget {
-  final String pdfPath;
-
-  FullPdfViewerScreen(this.pdfPath);
-
-  @override
-  Widget build(BuildContext context) {
-    return PDFViewerScaffold(
-        appBar: AppBar(
-          title: Text("Document"),
-        ),
-        path: pdfPath);
+            floatingActionButton: FloatingActionButton(
+                backgroundColor: Colors.black,
+                onPressed: () {
+                  myFocusNode.requestFocus();
+                },
+                child: Icon(Icons.search)),
+            body: Container(
+              child: Column(
+                children: <Widget>[
+                  Container(
+                    padding: const EdgeInsets.all(8.0),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      // border: Border(bottom: BorderSide(color: Colors.black, width: 2))
+                    ),
+                    child: TextField(
+                      focusNode: myFocusNode,
+                      onChanged: (value) {
+                        filterSearchResults(value);
+                      },
+                      controller: editingController,
+                      decoration: InputDecoration(
+                          labelText: "Search",
+                          hintText: "Type Something",
+                          prefixIcon: Icon(Icons.search),
+                          border: OutlineInputBorder(
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(25.0)))),
+                    ),
+                  ),
+                  Expanded(
+                      child: DraggableScrollbar.semicircle(
+                    // labelTextBuilder: (double offset) => Text("${offset ~/ 100}"),
+                    controller: _scrollController,
+                    child: ListView.builder(
+                      controller: _scrollController,
+                      itemCount: _pdfs.length,
+                      itemBuilder: (context, index) {
+                        return Container(
+                            padding: EdgeInsets.fromLTRB(3, 0, 3, 0),
+                            child: Container(
+                              child: Card(
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10)),
+                                child: Container(
+                                    decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(
+                                            color: Colors.grey, width: 1)),
+                                    child: GestureDetector(
+                                      behavior: HitTestBehavior.translucent,
+                                      onLongPressStart: (val) =>
+                                          contextMenu(context, index, val),
+                                      onTapCancel: () {
+                                        FocusScope.of(context)
+                                            .requestFocus(new FocusNode());
+                                      },
+                                      child: InkResponse(
+                                        containedInkWell: true,
+                                        borderRadius: BorderRadius.all(
+                                            Radius.circular(10)),
+                                        child: ListTile(
+                                          title: Text(
+                                              basename(_pdfs[index].path)
+                                                  .replaceAll(".pdf", "")),
+                                          onTap: () {
+                                            navigateToSubPage(context,
+                                                _pdfs[index].path.toString());
+                                          },
+                                        ),
+                                      ),
+                                    )),
+                              ),
+                            ));
+                      },
+                    ),
+                  )),
+                ],
+              ),
+            )));
   }
 }
