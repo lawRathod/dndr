@@ -28,13 +28,13 @@ jobs:
         java-version: '12.x'
     
     - name: Flutter Install
-    - run: git clone https://github.com/flutter/flutter.git
+      run: git clone https://github.com/flutter/flutter.git
     - run: echo "::add-path::$(pwd)/flutter/bin"
     - run: flutter channel dev
     - run: flutter upgrade
     
     - name: build apk
-    - run: flutter build apk --target-platform android-arm64
+      run: flutter build apk --target-platform android-arm64
     
 
 
