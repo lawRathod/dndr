@@ -32,6 +32,7 @@ jobs:
     - run: echo "::add-path::$(pwd)/flutter/bin"
     - run: flutter channel dev
     - run: flutter upgrade
+    - run: flutter pub get
     
     - name: build apk
       run: flutter build apk --target-platform android-arm64
