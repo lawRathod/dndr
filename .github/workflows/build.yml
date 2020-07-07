@@ -12,17 +12,10 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
   build:
-    # The type of runner that the job will run on
     runs-on: ubuntu-latest
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
-
-    # Runs a single command using the runners shell
     - uses: actions/setup-java@v1
       with:
         java-version: '12.x'
@@ -34,8 +27,15 @@ jobs:
     - run: flutter upgrade
     - run: flutter pub get
     
+    - name: sshpass install
+      run: sudo apt-get upgrade
+    - run: sudo apt-get install sshpass
+    
     - name: build apk
       run: flutter build apk --target-platform android-arm64
+    
+    - name: upload apk
+      run: sshpass -p ${{ secrets.SOURCEFORGE_PASS }} rsync -avP -e ssh -v build/app/outputs/flutter-apk/app-release.apk lawrathod@frs.sourceforge.net:/home/frs/project/dndr/app/dndr.apk
     
 
 
