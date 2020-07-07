@@ -27,11 +27,16 @@ dependencies:
   flutter_full_pdf_viewer: ^1.0.6
   path: ^1.7.0
   draggable_scrollbar: ^0.0.4
-
+  flutter_launcher_icons: "^0.7.3"
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^0.1.3
+
+flutter_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/icon/dndr.png"  
 
 dev_dependencies:
   flutter_test:
