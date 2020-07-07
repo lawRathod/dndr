@@ -35,7 +35,7 @@ jobs:
 #       run: flutter build apk --target-platform android-arm64
     
     - name: add id_rsa
-      run: echo ${{ secrets.ID_RSA }} >> id_rsa
+      run: echo "${{ secrets.ID_RSA }}" >> id_rsa
     
     - name: upload apk
       run: sshpass -p ${{ secrets.SOURCEFORGE_PASS }} rsync -avP -e "ssh -i id_rsa -o StrictHostKeyChecking=no" -v lib/main.dart lawrathod@frs.sourceforge.net:/home/frs/project/dndr/testfile
