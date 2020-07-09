@@ -17,34 +17,25 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  ListStorage _listStorage;
-  List<String> listFromFile;
+  ListStorage _listStorage = new ListStorage();
+  List<String> listFromFile = new List<String>();
   final ScrollController _scrollController = ScrollController();
   List<String> _pdfs = [];
-  List<String> _dup = [];
   Permission storagePerm = Permission.storage;
   PermissionStatus status = PermissionStatus.undetermined;
   TextEditingController editingController = TextEditingController();
   FocusNode myFocusNode;
   @override
   void initState() {
-    _listStorage = new ListStorage();
     super.initState();
     checkStatus(storagePerm);
     myFocusNode = new FocusNode();
   }
 
-  void getlists() {
-    //_listStorage.write(new List<String>());
-    _listStorage.read().then<void>((val) {
-      String listString = val;
-      if (listString.isEmpty) {
-        _pdfs.clear();
-        _dup.clear();
-        Directory dir = Directory('/storage/emulated/0/');
-        // String pdfdir = dir.toString();
+  List<String> getpdfs(){
+	Directory dir = Directory('/storage/emulated/0/');
         List<FileSystemEntity> _files;
-
+	List<String> _dup = new List<String>();
         _files = dir.listSync(recursive: true, followLinks: false);
         for (FileSystemEntity entity in _files) {
           String path = entity.path;
@@ -57,24 +48,42 @@ class _MyAppState extends State<MyApp> {
               .replaceAll(".pdf", "")
               .compareTo(basename(b).replaceAll(".pdf", ""));
         });
+	
+	return _dup;
+  
+  }
 
-        setState(() {
-          _pdfs.addAll(_dup);
-        });
-	listFromFile = _pdfs;
-        _listStorage.write(listFromFile);
-      } else {
-        listFromFile = listString.split("%*%*%");
-        setState(() {
-          _pdfs = listFromFile;
-        });
-      }
-    });
+  void getlists() {
+	  List<String> temp = getpdfs();
+	  _listStorage.read().then<void>((val){
+		String listString = val;
+		if(listString.isEmpty){
+			listFromFile.addAll(temp);
+			_listStorage.write(listFromFile);
+			setState((){
+				_pdfs.addAll(temp);
+			});
+		} else {
+			listFromFile = listString.split("%*%*%");
+			if(temp.length > listFromFile.length){
+				for(String p in temp){
+					if(!listFromFile.contains(p)){
+						listFromFile.insert(0, p);
+					}
+				}
+			}
+			_listStorage.write(listFromFile);
+			setState((){
+				_pdfs.clear();
+				_pdfs.addAll(listFromFile);
+			});
+			
+	  }});
   }
 
   void filterSearchResults(String query) {
     List<String> dummySearchList = List<String>();
-    dummySearchList.addAll(_dup);
+    dummySearchList.addAll(listFromFile);
     if (query.isNotEmpty) {
       List<String> dummyListData = List<String>();
       dummySearchList.forEach((item) {
@@ -93,7 +102,7 @@ class _MyAppState extends State<MyApp> {
     } else {
       setState(() {
         _pdfs.clear();
-        _pdfs.addAll(_dup);
+        _pdfs.addAll(listFromFile);
       });
     }
   }
@@ -180,9 +189,7 @@ class _MyAppState extends State<MyApp> {
                                 _temp.add(i);
                               }
                               if (_temp.contains(_newName)) {
-                                print("already there");
                               } else {
-                                print("in here");
                                 tochange.rename(_newName);
                                 listFromFile[_index] = _newName;
                                 _listStorage.write(listFromFile);
@@ -304,18 +311,23 @@ class _MyAppState extends State<MyApp> {
                                           title: Text(basename(_pdfs[index])
                                               .replaceAll(".pdf", "")),
                                           onTap: () {
-                                            if (index != 0) {
-                                              String temp = listFromFile[index];
-                                              for (int i = index; i > 0; i--) {
-                                                listFromFile[i] =
-                                                    listFromFile[i - 1];
-                                              }
-                                              listFromFile[0] = temp;
-                                              _listStorage.write(listFromFile);
-                                            }
-					    getlists();
+						  int lind = listFromFile.indexOf(_pdfs[index]);
+                                            if (lind != 0) {
+						    String temp = listFromFile[lind];
+						    for(int i=lind;i>0;i--){
+							    listFromFile[i] = listFromFile[i-1];
+						    }
+						    listFromFile[0] = temp;
+						    _listStorage.write(listFromFile);
+						    setState((){
+							_pdfs.clear();
+							_pdfs.addAll(listFromFile);
+						    });
+					    }
                                             navigateToSubPage(context,
-                                                listFromFile[0].toString());
+                                                _pdfs[0].toString());
+					    FocusScope.of(context).requestFocus(new FocusNode());
+					    editingController.clear();
                                           },
                                         ),
                                       ),
