@@ -20,7 +20,7 @@ class _MyAppState extends State<MyApp> {
   ListStorage _listStorage = new ListStorage();
   List<String> listFromFile = new List<String>();
   final ScrollController _scrollController = ScrollController();
-  List<String> _pdfs = [];
+  List<String> _pdfs = new List<String>();
   Permission storagePerm = Permission.storage;
   PermissionStatus status = PermissionStatus.undetermined;
   TextEditingController editingController = TextEditingController();
@@ -148,7 +148,10 @@ class _MyAppState extends State<MyApp> {
           tochange.delete();
           listFromFile.removeAt(_index);
           _listStorage.write(listFromFile);
-          getlists();
+	  setState((){
+		  _pdfs.clear();
+		  _pdfs.addAll(listFromFile);
+	  });
         } catch (e) {
           print(e);
         }
@@ -193,7 +196,10 @@ class _MyAppState extends State<MyApp> {
                                 tochange.rename(_newName);
                                 listFromFile[_index] = _newName;
                                 _listStorage.write(listFromFile);
-                                getlists();
+				setState((){
+					_pdfs.clear();
+					_pdfs.addAll(listFromFile);
+				});
                               }
                             } else {
                               print("String Empty");
@@ -311,13 +317,10 @@ class _MyAppState extends State<MyApp> {
                                           title: Text(basename(_pdfs[index])
                                               .replaceAll(".pdf", "")),
                                           onTap: () {
-						  int lind = listFromFile.indexOf(_pdfs[index]);
-                                            if (lind != 0) {
-						    String temp = listFromFile[lind];
-						    for(int i=lind;i>0;i--){
-							    listFromFile[i] = listFromFile[i-1];
-						    }
-						    listFromFile[0] = temp;
+                                            if (index != 0) {
+						    String temp = _pdfs[index];
+						    listFromFile.removeAt(index);
+						    listFromFile.insert(0, temp);
 						    _listStorage.write(listFromFile);
 						    setState((){
 							_pdfs.clear();
