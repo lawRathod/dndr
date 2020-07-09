@@ -5,6 +5,7 @@ import 'package:permission_handler/permission_handler.dart';
 import "dart:io";
 import "package:path/path.dart";
 import "pdfviewer.dart";
+import 'package:path_provider/path_provider.dart';
 
 void main() => runApp(MyApp());
 
@@ -16,14 +17,14 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  ListStorage _listStorage = new ListStorage();
+  List<String> listFromFile = new List<String>();
   final ScrollController _scrollController = ScrollController();
-  List<FileSystemEntity> _pdfs = [];
-  List<FileSystemEntity> _dup = [];
+  List<String> _pdfs = [];
   Permission storagePerm = Permission.storage;
   PermissionStatus status = PermissionStatus.undetermined;
   TextEditingController editingController = TextEditingController();
   FocusNode myFocusNode;
-
   @override
   void initState() {
     super.initState();
@@ -31,38 +32,62 @@ class _MyAppState extends State<MyApp> {
     myFocusNode = new FocusNode();
   }
 
+  List<String> getpdfs(){
+	Directory dir = Directory('/storage/emulated/0/');
+        List<FileSystemEntity> _files;
+	List<String> _dup = new List<String>();
+        _files = dir.listSync(recursive: true, followLinks: false);
+        for (FileSystemEntity entity in _files) {
+          String path = entity.path;
+          if (path.endsWith('.pdf')) {
+            _dup.add(entity.path);
+          }
+        }
+        _dup.sort((a, b) {
+          return basename(a)
+              .replaceAll(".pdf", "")
+              .compareTo(basename(b).replaceAll(".pdf", ""));
+        });
+	
+	return _dup;
+  
+  }
+
   void getlists() {
-    _pdfs.clear();
-    _dup.clear();
-    Directory dir = Directory('/storage/emulated/0/');
-    // String pdfdir = dir.toString();
-    List<FileSystemEntity> _files;
-
-    _files = dir.listSync(recursive: true, followLinks: false);
-    for (FileSystemEntity entity in _files) {
-      String path = entity.path;
-      if (path.endsWith('.pdf')) {
-        _dup.add(entity);
-      }
-    }
-    _dup.sort((a, b) {
-      return basename(a.path)
-          .replaceAll(".pdf", "")
-          .compareTo(basename(b.path).replaceAll(".pdf", ""));
-    });
-
-    setState(() {
-      _pdfs.addAll(_dup);
-    });
+	  List<String> temp = getpdfs();
+	  _listStorage.read().then<void>((val){
+		String listString = val;
+		if(listString.isEmpty){
+			listFromFile.addAll(temp);
+			_listStorage.write(listFromFile);
+			setState((){
+				_pdfs.addAll(temp);
+			});
+		} else {
+			listFromFile = listString.split("%*%*%");
+			if(temp.length > listFromFile.length){
+				for(String p in temp){
+					if(!listFromFile.contains(p)){
+						listFromFile.insert(0, p);
+					}
+				}
+			}
+			_listStorage.write(listFromFile);
+			setState((){
+				_pdfs.clear();
+				_pdfs.addAll(listFromFile);
+			});
+			
+	  }});
   }
 
   void filterSearchResults(String query) {
-    List<FileSystemEntity> dummySearchList = List<FileSystemEntity>();
-    dummySearchList.addAll(_dup);
+    List<String> dummySearchList = List<String>();
+    dummySearchList.addAll(listFromFile);
     if (query.isNotEmpty) {
-      List<FileSystemEntity> dummyListData = List<FileSystemEntity>();
+      List<String> dummyListData = List<String>();
       dummySearchList.forEach((item) {
-        if (basename(item.path)
+        if (basename(item)
             .replaceAll(".pdf", "")
             .toLowerCase()
             .contains(query.toLowerCase())) {
@@ -77,7 +102,7 @@ class _MyAppState extends State<MyApp> {
     } else {
       setState(() {
         _pdfs.clear();
-        _pdfs.addAll(_dup);
+        _pdfs.addAll(listFromFile);
       });
     }
   }
@@ -117,10 +142,12 @@ class _MyAppState extends State<MyApp> {
             ])),
           )
         ]).then<void>((String sel) {
-      File tochange = new File(_pdfs[_index].path);
+      File tochange = new File(_pdfs[_index]);
       if (sel == "del") {
         try {
           tochange.delete();
+          listFromFile.removeAt(_index);
+          _listStorage.write(listFromFile);
           getlists();
         } catch (e) {
           print(e);
@@ -158,14 +185,14 @@ class _MyAppState extends State<MyApp> {
                                   _newName +
                                   ".pdf";
                               List<String> _temp = new List<String>();
-                              for (FileSystemEntity i in _pdfs) {
-                                _temp.add(i.path);
+                              for (String i in _pdfs) {
+                                _temp.add(i);
                               }
                               if (_temp.contains(_newName)) {
-                                print("already there");
                               } else {
-                                print("in here");
                                 tochange.rename(_newName);
+                                listFromFile[_index] = _newName;
+                                _listStorage.write(listFromFile);
                                 getlists();
                               }
                             } else {
@@ -281,12 +308,26 @@ class _MyAppState extends State<MyApp> {
                                         borderRadius: BorderRadius.all(
                                             Radius.circular(10)),
                                         child: ListTile(
-                                          title: Text(
-                                              basename(_pdfs[index].path)
-                                                  .replaceAll(".pdf", "")),
+                                          title: Text(basename(_pdfs[index])
+                                              .replaceAll(".pdf", "")),
                                           onTap: () {
+						  int lind = listFromFile.indexOf(_pdfs[index]);
+                                            if (lind != 0) {
+						    String temp = listFromFile[lind];
+						    for(int i=lind;i>0;i--){
+							    listFromFile[i] = listFromFile[i-1];
+						    }
+						    listFromFile[0] = temp;
+						    _listStorage.write(listFromFile);
+						    setState((){
+							_pdfs.clear();
+							_pdfs.addAll(listFromFile);
+						    });
+					    }
                                             navigateToSubPage(context,
-                                                _pdfs[index].path.toString());
+                                                _pdfs[0].toString());
+					    FocusScope.of(context).requestFocus(new FocusNode());
+					    editingController.clear();
                                           },
                                         ),
                                       ),
@@ -299,5 +340,38 @@ class _MyAppState extends State<MyApp> {
                 ],
               ),
             )));
+  }
+}
+
+class ListStorage {
+  Future<File> get _localFile async {
+    final path = await _localPath;
+    return File('$path/list').create(recursive: true);
+  }
+
+  Future<String> read() async {
+    try {
+      final file = await _localFile;
+      String list = await file.readAsString();
+      return list;
+    } catch (e) {
+      return e.toString();
+    }
+  }
+
+  Future<void> write(List<String> x) async {
+    String p = x.join("%*%*%");
+    try {
+      final file = await _localFile;
+
+      await file.writeAsString('$p');
+    } catch (e) {
+      return e.toString();
+    }
+  }
+
+  Future<String> get _localPath async {
+    final directory = await getApplicationDocumentsDirectory();
+    return directory.path;
   }
 }
