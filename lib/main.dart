@@ -319,7 +319,7 @@ class _MyAppState extends State<MyApp> {
                                           onTap: () {
                                             if (index != 0) {
 						    String temp = _pdfs[index];
-						    listFromFile.removeAt(index);
+						    listFromFile.removeAt(listFromFile.indexOf(temp));
 						    listFromFile.insert(0, temp);
 						    _listStorage.write(listFromFile);
 						    setState((){
