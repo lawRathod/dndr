@@ -33,52 +33,52 @@ class _MyAppState extends State<MyApp> {
   }
 
   List<String> getpdfs(){
-	Directory dir = Directory('/storage/emulated/0/');
-        List<FileSystemEntity> _files;
-	List<String> _dup = new List<String>();
-        _files = dir.listSync(recursive: true, followLinks: false);
-        for (FileSystemEntity entity in _files) {
-          String path = entity.path;
-          if (path.endsWith('.pdf')) {
-            _dup.add(entity.path);
-          }
-        }
-        _dup.sort((a, b) {
-          return basename(a)
-              .replaceAll(".pdf", "")
-              .compareTo(basename(b).replaceAll(".pdf", ""));
-        });
-	
-	return _dup;
-  
+    Directory dir = Directory('/storage/emulated/0/');
+    List<FileSystemEntity> _files;
+    List<String> _dup = new List<String>();
+    _files = dir.listSync(recursive: true, followLinks: false);
+    for (FileSystemEntity entity in _files) {
+      String path = entity.path;
+      if (path.endsWith('.pdf')) {
+        _dup.add(entity.path);
+      }
+    }
+    _dup.sort((a, b) {
+      return basename(a)
+          .replaceAll(".pdf", "")
+          .compareTo(basename(b).replaceAll(".pdf", ""));
+    });
+
+    return _dup;
+
   }
 
   void getlists() {
-	  List<String> temp = getpdfs();
-	  _listStorage.read().then<void>((val){
-		String listString = val;
-		if(listString.isEmpty){
-			listFromFile.addAll(temp);
-			_listStorage.write(listFromFile);
-			setState((){
-				_pdfs.addAll(temp);
-			});
-		} else {
-			listFromFile = listString.split("%*%*%");
-			if(temp.length > listFromFile.length){
-				for(String p in temp){
-					if(!listFromFile.contains(p)){
-						listFromFile.insert(0, p);
-					}
-				}
-			}
-			_listStorage.write(listFromFile);
-			setState((){
-				_pdfs.clear();
-				_pdfs.addAll(listFromFile);
-			});
-			
-	  }});
+    List<String> temp = getpdfs();
+    _listStorage.read().then<void>((val){
+      String listString = val;
+      if(listString.isEmpty){
+        listFromFile.addAll(temp);
+        _listStorage.write(listFromFile);
+        setState((){
+          _pdfs.addAll(temp);
+        });
+      } else {
+        listFromFile = listString.split("%*%*%");
+        if(temp.length > listFromFile.length){
+          for(String p in temp){
+            if(!listFromFile.contains(p)){
+              listFromFile.insert(0, p);
+            }
+          }
+        }
+        _listStorage.write(listFromFile);
+        setState((){
+          _pdfs.clear();
+          _pdfs.addAll(listFromFile);
+        });
+
+      }});
   }
 
   void filterSearchResults(String query) {
@@ -130,36 +130,36 @@ class _MyAppState extends State<MyApp> {
               value: "del",
               child: Container(
                   child: Row(children: <Widget>[
-                Icon(Icons.delete, color: Colors.red),
-                Text("  Delete", style: TextStyle(color: Colors.red))
-              ]))),
+                    Icon(Icons.delete, color: Colors.red),
+                    Text("  Delete", style: TextStyle(color: Colors.red))
+                  ]))),
           PopupMenuItem(
-            value: "edit",
-            child: Container(
-                child: Row(children: <Widget>[
-              Icon(Icons.edit, color: Colors.grey.shade700),
-              Text("  Rename", style: TextStyle(color: Colors.grey.shade700)),
-            ])),
+              value: "edit",
+              child: Container(
+                  child: Row(children: <Widget>[
+                    Icon(Icons.edit, color: Colors.grey.shade700),
+                    Text("  Rename", style: TextStyle(color: Colors.grey.shade700)),
+                  ])),
           )
         ]).then<void>((String sel) {
-      File tochange = new File(_pdfs[_index]);
-      if (sel == "del") {
-        try {
-          tochange.delete();
-          listFromFile.removeAt(_index);
-          _listStorage.write(listFromFile);
-	  setState((){
-		  _pdfs.clear();
-		  _pdfs.addAll(listFromFile);
-	  });
-        } catch (e) {
-          print(e);
-        }
-      } else if (sel == "edit") {
-        String _newName;
-        showDialog(
-            context: _context,
-            builder: (_) => new AlertDialog(
+          File tochange = new File(_pdfs[_index]);
+          if (sel == "del") {
+            try {
+              tochange.delete();
+              listFromFile.removeAt(_index);
+              _listStorage.write(listFromFile);
+              setState((){
+                _pdfs.clear();
+                _pdfs.addAll(listFromFile);
+              });
+            } catch (e) {
+              print(e);
+            }
+          } else if (sel == "edit") {
+            String _newName;
+            showDialog(
+                context: _context,
+                builder: (_) => new AlertDialog(
                     title: Text("Rename"),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.all(Radius.circular(32))),
@@ -171,10 +171,10 @@ class _MyAppState extends State<MyApp> {
                                 _newName = val;
                               },
                               decoration: InputDecoration(
-                                  labelText: "Name",
-                                  border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.all(
-                                          Radius.circular(25.0))))))
+                                              labelText: "Name",
+                                              border: OutlineInputBorder(
+                                                  borderRadius: BorderRadius.all(
+                                                      Radius.circular(25.0))))))
                     ]),
                     actions: <Widget>[
                       FlatButton(
@@ -184,7 +184,7 @@ class _MyAppState extends State<MyApp> {
                             Navigator.of(_context).pop();
                             if (_newName != null) {
                               _newName = tochange.path.substring(
-                                      0, tochange.path.lastIndexOf("/") + 1) +
+                                  0, tochange.path.lastIndexOf("/") + 1) +
                                   _newName +
                                   ".pdf";
                               List<String> _temp = new List<String>();
@@ -196,18 +196,18 @@ class _MyAppState extends State<MyApp> {
                                 tochange.rename(_newName);
                                 listFromFile[_index] = _newName;
                                 _listStorage.write(listFromFile);
-				setState((){
-					_pdfs.clear();
-					_pdfs.addAll(listFromFile);
-				});
+                                setState((){
+                                  _pdfs.clear();
+                                  _pdfs.addAll(listFromFile);
+                                });
                               }
                             } else {
                               print("String Empty");
                             }
                           })
-                    ]));
-      }
-    });
+            ]));
+          }
+        });
   }
 
   Future navigateToSubPage(context, pdf) async {
@@ -218,8 +218,8 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-      statusBarColor: Colors.white,
-      statusBarIconBrightness: Brightness.dark,
+            statusBarColor: Colors.white,
+            statusBarIconBrightness: Brightness.dark,
     ));
     return MaterialApp(
         title: "Home",
@@ -229,120 +229,122 @@ class _MyAppState extends State<MyApp> {
             appBarTheme: AppBarTheme(color: Colors.white)),
         home: Scaffold(
             appBar: AppBar(
-              brightness: Brightness.light,
-              elevation: 0,
-              bottom: PreferredSize(
-                  child: Container(
-                    color: Colors.grey,
-                    height: 1.0,
-                  ),
-                  preferredSize: Size.fromHeight(4.0)),
-              title: Text(
-                "dndr",
-                style: TextStyle(color: Colors.grey.shade700),
-              ),
-              actions: <Widget>[
-                IconButton(
-                  color: Colors.grey.shade800,
-                  icon: Icon(Icons.refresh),
-                  onPressed: () {
-                    getlists();
-                  },
-                )
-              ],
-            ),
-            floatingActionButton: FloatingActionButton(
-                backgroundColor: Colors.black,
-                onPressed: () {
-                  myFocusNode.requestFocus();
-                },
-                child: Icon(Icons.search)),
-            body: Container(
-              child: Column(
-                children: <Widget>[
-                  Container(
-                    padding: const EdgeInsets.all(8.0),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      // border: Border(bottom: BorderSide(color: Colors.black, width: 2))
+                brightness: Brightness.light,
+                elevation: 0,
+                bottom: PreferredSize(
+                    child: Container(
+                        color: Colors.grey,
+                        height: 1.0,
                     ),
-                    child: TextField(
-                      focusNode: myFocusNode,
-                      onChanged: (value) {
-                        filterSearchResults(value);
+                    preferredSize: Size.fromHeight(4.0)),
+                title: Text(
+                    "dndr",
+                    style: TextStyle(color: Colors.grey.shade700),
+                ),
+                actions: <Widget>[
+                  IconButton(
+                      color: Colors.grey.shade800,
+                      icon: Icon(Icons.refresh),
+                      onPressed: () {
+                        getlists();
                       },
-                      controller: editingController,
-                      decoration: InputDecoration(
-                          labelText: "Search",
-                          hintText: "Type Something",
-                          prefixIcon: Icon(Icons.search),
-                          border: OutlineInputBorder(
-                              borderRadius:
-                                  BorderRadius.all(Radius.circular(25.0)))),
-                    ),
-                  ),
-                  Expanded(
-                      child: DraggableScrollbar.semicircle(
-                    // labelTextBuilder: (double offset) => Text("${offset ~/ 100}"),
-                    controller: _scrollController,
-                    child: ListView.builder(
-                      controller: _scrollController,
-                      itemCount: _pdfs.length,
-                      itemBuilder: (context, index) {
-                        return Container(
-                            padding: EdgeInsets.fromLTRB(3, 0, 3, 0),
-                            child: Container(
-                              child: Card(
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10)),
-                                child: Container(
-                                    decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(10),
-                                        border: Border.all(
-                                            color: Colors.grey, width: 1)),
-                                    child: GestureDetector(
-                                      behavior: HitTestBehavior.translucent,
-                                      onLongPressStart: (val) =>
-                                          contextMenu(context, index, val),
-                                      onTapCancel: () {
-                                        FocusScope.of(context)
-                                            .requestFocus(new FocusNode());
-                                      },
-                                      child: InkResponse(
-                                        containedInkWell: true,
-                                        borderRadius: BorderRadius.all(
-                                            Radius.circular(10)),
-                                        child: ListTile(
-                                          title: Text(basename(_pdfs[index])
-                                              .replaceAll(".pdf", "")),
-                                          onTap: () {
-                                            if (index != 0) {
-						    String temp = _pdfs[index];
-						    listFromFile.removeAt(listFromFile.indexOf(temp));
-						    listFromFile.insert(0, temp);
-						    _listStorage.write(listFromFile);
-						    setState((){
-							_pdfs.clear();
-							_pdfs.addAll(listFromFile);
-						    });
-					    }
-                                            navigateToSubPage(context,
-                                                _pdfs[0].toString());
-					    FocusScope.of(context).requestFocus(new FocusNode());
-					    editingController.clear();
-                                          },
-                                        ),
-                                      ),
-                                    )),
-                              ),
-                            ));
-                      },
-                    ),
-                  )),
+                  )
                 ],
-              ),
-            )));
+                ),
+                floatingActionButton: FloatingActionButton(
+                    backgroundColor: Colors.black,
+                    onPressed: () {
+                      myFocusNode.requestFocus();
+                    },
+                    child: Icon(Icons.search)),
+                    body: Container(
+                        child: Column(
+                            children: <Widget>[
+                              Container(
+                                  padding: const EdgeInsets.all(8.0),
+                                  decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      // border: Border(bottom: BorderSide(color: Colors.black, width: 2))
+                                  ),
+                                  child: TextField(
+                                      focusNode: myFocusNode,
+                                      onChanged: (value) {
+                                        filterSearchResults(value);
+                                      },
+                                      controller: editingController,
+                                      decoration: InputDecoration(
+                                          labelText: "Search",
+                                          hintText: "Type Something",
+                                          prefixIcon: Icon(Icons.search),
+                                          border: OutlineInputBorder(
+                                              borderRadius:
+                                              BorderRadius.all(Radius.circular(25.0)))),
+                                  ),
+                              ),
+                              Expanded(
+                                  child: DraggableScrollbar.semicircle(
+                                      // labelTextBuilder: (double offset) => Text("${offset ~/ 100}"),
+                                      controller: _scrollController,
+                                      child: ListView.builder(
+                                          controller: _scrollController,
+                                          itemCount: _pdfs.length,
+                                          itemBuilder: (context, index) {
+                                            return Container(
+                                                padding: EdgeInsets.fromLTRB(3, 0, 3, 0),
+                                                child: Container(
+                                                    child: Card(
+                                                        elevation: 0,
+                                                        shape: RoundedRectangleBorder(
+                                                            borderRadius: BorderRadius.circular(10)),
+                                                        child: Container(
+                                                            decoration: BoxDecoration(
+                                                                borderRadius: BorderRadius.circular(10),
+                                                                border: Border.all(
+                                                                    color: Colors.grey, width: 1)),
+                                                            child: GestureDetector(
+                                                                behavior: HitTestBehavior.translucent,
+                                                                onLongPressStart: (val) =>
+                                                                contextMenu(context, index, val),
+                                                                onTapCancel: () {
+                                                                  FocusScope.of(context)
+                                                                      .requestFocus(new FocusNode());
+                                                                },
+                                                                child: InkResponse(
+                                                                           containedInkWell: true,
+                                                                           borderRadius: BorderRadius.all(
+                                                                               Radius.circular(10)),
+                                                                           child: ListTile(
+                                                                               title: Text(basename(_pdfs[index])
+                                                                                   .replaceAll(".pdf", "")),
+                                                                               onTap: () {
+                                                                                 if (index != 0) {
+                                                                                   String temp = _pdfs[index];
+                                                                                   listFromFile.removeAt(listFromFile.indexOf(temp));
+                                                                                   listFromFile.insert(0, temp);
+                                                                                   _listStorage.write(listFromFile);
+                                                                                   
+                                                                                 }
+                                                                                 setState((){
+                                                                                     _pdfs.clear();
+                                                                                     _pdfs.addAll(listFromFile);
+                                                                                   });
+                                                                                 navigateToSubPage(context,
+                                                                                     _pdfs[0].toString());
+                                                                                 
+                                                                                 FocusScope.of(context).requestFocus(new FocusNode());
+                                                                                 editingController.clear();
+                                                                               },
+                                                                           ),
+                                                                           ),
+                                                                           )),
+                                                                           ),
+                                                                           ));
+                                          },
+                                          ),
+                                          )),
+                                          ],
+                                          ),
+                                          )));
   }
 }
 
